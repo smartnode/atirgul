@@ -48,7 +48,7 @@ struct nk_cairo_context {
     PangoContext *pango_ctx;
 
     struct nk_context *nk_ctx;
-    struct nk_cairo_font *font;
+    struct nk_user_font *font;
 
     void *last_buffer_addr;
     nk_size last_buffer_size;
@@ -79,7 +79,7 @@ NK_INTERN float nk_cairo_text_width(nk_handle handle, float height, const char *
 }
 
 
-NK_API struct nk_cairo_font *nk_cairo_create_font(struct nk_cairo_context *cairo_ctx, const char *font_family, float font_size)
+NK_API struct nk_user_font *nk_cairo_get_font(struct nk_cairo_context *cairo_ctx, const char *font_family, float font_size)
 {
     ENT();
     if (cairo_ctx == NULL || cairo_ctx->pango_ctx == NULL || font_family == NULL || font_size < 0.01f) {
@@ -108,34 +108,27 @@ NK_API struct nk_cairo_font *nk_cairo_create_font(struct nk_cairo_context *cairo
     }
     font->pctx = g_object_ref(cairo_ctx->pango_ctx);
     font->nkufont.userdata = nk_handle_ptr(font);
-    font->nkufont.height = font_size;
+    font->nkufont.height = font_size * 2.0f;
     font->nkufont.width = nk_cairo_text_width;
 
     EXT();
-    return font;
+    return &(font->nkufont);
 }
 
-NK_API struct nk_user_font *nk_cairo_get_user_font(struct nk_cairo_font *cairo_font)
+NK_API void nk_cairo_put_font(struct nk_user_font *nkufont)
 {
     ENT();
-    if (cairo_font == NULL) {
-        ERR("Invalid parameter");
-        return NULL;
-    }
-    EXT();
-    return &(cairo_font->nkufont);
-}
-
-NK_API void nk_cairo_destory_font(struct nk_cairo_font *font)
-{
-    ENT();
-    if (font) {
+    if (nkufont) {
+        struct nk_cairo_font *font = (struct nk_cairo_font*)nkufont->userdata.ptr;
         pango_font_description_free(font->desc);
         g_object_unref(font->pctx);
         font->desc = NULL;
         font->nkufont.userdata.ptr = NULL;
         font->nkufont.width = NULL;
         free(font);
+    } else  {
+        nkufont->userdata.ptr = NULL;
+        nkufont->width = NULL;
     }
     EXT();
 }
@@ -185,7 +178,7 @@ NK_API struct nk_cairo_context *nk_cairo_init(uint8_t *buffer, int width, int he
         return NULL;
     }
 
-    cairo_ctx->font = nk_cairo_create_font(cairo_ctx, DEFAULT_FONT_NAME, DEFAULT_FONT_SIZE);
+    cairo_ctx->font = nk_cairo_get_font(cairo_ctx, DEFAULT_FONT_NAME, DEFAULT_FONT_SIZE);
     if (cairo_ctx->font == NULL) {
         nk_cairo_deinit(cairo_ctx);
         return NULL;
@@ -198,7 +191,7 @@ NK_API struct nk_cairo_context *nk_cairo_init(uint8_t *buffer, int width, int he
         return NULL;
     }
 
-    nk_bool ret = nk_init_default(cairo_ctx->nk_ctx, &(cairo_ctx->font->nkufont));
+    nk_bool ret = nk_init_default(cairo_ctx->nk_ctx, cairo_ctx->font);
     if (ret == nk_false) {
         ERR("Failed to initialize nuklear with nk_init_default");
         nk_cairo_deinit(cairo_ctx);
@@ -226,7 +219,7 @@ NK_API void nk_cairo_deinit(struct nk_cairo_context *cairo_ctx)
         }
 
         if (cairo_ctx->font) {
-            nk_cairo_destory_font(cairo_ctx->font);
+            nk_cairo_put_font(cairo_ctx->font);
             cairo_ctx->font = NULL;
         }
 
@@ -494,9 +487,8 @@ NK_API bool nk_cairo_render(struct nk_cairo_context *cairo_ctx)
                 const struct nk_cairo_font *font = (struct nk_cairo_font *)t->font->userdata.ptr;
                 cairo_set_source_rgba(cr, NK_TO_CAIRO(t->foreground.r), NK_TO_CAIRO(t->foreground.g), NK_TO_CAIRO(t->foreground.b), NK_TO_CAIRO(t->foreground.a));
                 
-                // Position
+                cairo_save(cr);
                 cairo_move_to(cr, t->x, t->y);
-
                 // Build Pango layout
                 PangoLayout *layout = pango_cairo_create_layout(cr);
                 pango_layout_set_text(layout, t->string, t->length);

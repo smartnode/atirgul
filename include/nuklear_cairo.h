@@ -42,7 +42,6 @@ typedef enum {
 
 struct nk_context;
 struct nk_cairo_context;
-struct nk_cairo_font;
 
 NK_API struct nk_cairo_context *nk_cairo_init(uint8_t *bufer, int width, int height, int bpp, nk_cairo_rotate_e rotate);
 NK_API void nk_cairo_deinit(struct nk_cairo_context *cairo_ctx);
@@ -50,9 +49,8 @@ NK_API struct nk_context *nk_cairo_get_nk_context(struct nk_cairo_context *cairo
 NK_API bool nk_cairo_render(struct nk_cairo_context *cairo_ctx);
 NK_API void nk_cairo_damage(struct nk_cairo_context *cairo_ctx);
 NK_API void nk_cairo_dump_surface(struct nk_cairo_context *cairo_ctx, const char *filename);
-NK_API struct nk_cairo_font *nk_cairo_create_font(struct nk_cairo_context *cairo_ctx, const char *font_family, float font_size);
-NK_API struct nk_user_font *nk_cairo_get_user_font(struct nk_cairo_font *cairo_font);
-NK_API void nk_cairo_destory_font(struct nk_cairo_font *font);
+NK_API struct nk_user_font *nk_cairo_get_font(struct nk_cairo_context *cairo_ctx, const char *font_family, float font_size);
+NK_API void nk_cairo_put_font(struct nk_user_font *cairo_font);
 
 #ifdef __cplusplus
 }
