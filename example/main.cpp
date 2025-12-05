@@ -28,7 +28,7 @@ const std::vector<LanguageData> LANGUAGES = {
     {"hi", "सुंदर गुलाब", "गुलाब एक सुंदर फूल है जिसके कई प्रकार और रंग हैं। यह प्रेम, सौंदर्य और जुनून का प्रतीक है।", "हिन्दी "},
 };
 
-static float PROGRESS_STEP = MAX_PROGRESS / LANGUAGES.size();
+static float PROGRESS_STEP = static_cast<float>(MAX_PROGRESS) / LANGUAGES.size();
 
 // --- State Management ---
 struct AppData
@@ -162,7 +162,6 @@ int main()
     size_t buffer_size = data.width * data.height * data.bpp;
     auto buffer = std::vector<uint8_t>(buffer_size);
 
-    // Define cairo_ctx before the loop so it can be used in draw_multilingual_window's damage call
     data.cairo_ctx = nk_cairo_init(buffer.data(), data.width, data.height, data.bpp, NK_CARIO_ROTATE_0);
     if (!data.cairo_ctx)
     {

@@ -108,7 +108,7 @@ NK_API struct nk_user_font *nk_cairo_get_font(struct nk_cairo_context *cairo_ctx
     }
     font->pctx = g_object_ref(cairo_ctx->pango_ctx);
     font->nkufont.userdata = nk_handle_ptr(font);
-    font->nkufont.height = font_size * 2.0f;
+    font->nkufont.height = font_size * 1.5f;
     font->nkufont.width = nk_cairo_text_width;
 
     EXT();
